@@ -3,7 +3,8 @@ FROM debian:bullseye
 ENV env prod
 ENV  DEBIAN_FRONTEND noninteractive
 MAINTAINER <Cesar Araujo>
-
+ARG NAGIOS_VERSION="4.5.9"
+ARG NAGIOS_PLUGIN_VERSION="2.4.11"
 
 ##
 ## Create users
@@ -49,10 +50,16 @@ RUN echo mariadb-server-10.5 mysql-server/root_password password Nag123 | debcon
 ##
 ## Nagios compilation
 ##
-# RUN curl -L -O  http://prdownloads.sourceforge.net/sourceforge/nagios/nagios-4.4.9.tar.gz
-COPY sources/nagios-4.4.9.tar.gz /tmp/
+RUN curl -L -o /tmp/nagios-${NAGIOS_VERSION}.tar.gz  http://prdownloads.sourceforge.net/sourceforge/nagios/nagios-${NAGIOS_VERSION}.tar.gz
+#COPY sources/nagios-${NAGIOS_VERSION}.tar.gz /tmp/
 RUN cd /tmp/&&tar xvf nagios-*.tar.gz
-RUN cd /tmp/nagios-*&&./configure --with-nagios-group=nagios --with-command-group=nagcmd
+
+##
+## Patch nagios to show service command
+##
+COPY patch.sh /tmp//nagios-${NAGIOS_VERSION}/
+RUN cd /tmp/nagios-*&&./patch.sh
+RUN cd /tmp/nagios-*&&./configure --with-nagios-group=nagios --with-command-group=nagcmd --with-ssl-lib=/usr/lib/aarch64-linux-gnu/ --build=aarch64-unknown-linux-gnu
 RUN cd /tmp/nagios-*&&make all
 RUN cd /tmp/nagios-*&&make install
 RUN cd /tmp/nagios-*&&make install-commandmode
@@ -65,10 +72,10 @@ RUN usermod -G nagcmd www-data
 ##
 ## Nagios plugins compilation
 ##
-#RUN curl -L -O http://nagios-plugins.org/download/nagios-plugins-2.3.3.tar.gz
-COPY sources/nagios-plugins-2.3.3.tar.gz /tmp/
+RUN curl -L -o /tmp/nagios-plugins-${NAGIOS_PLUGIN_VERSION}.tar.gz http://nagios-plugins.org/download/nagios-plugins-${NAGIOS_PLUGIN_VERSION}.tar.gz
+#COPY sources/nagios-plugins-${NAGIOS_PLUGIN_VERSION}.tar.gz /tmp/
 RUN cd /tmp/&&tar xvf nagios-plugins-*.tar.gz
-RUN cd /tmp/nagios-plugins-*&&./configure --with-nagios-user=nagios --with-nagios-group=nagios --with-openssl
+RUN cd /tmp/nagios-plugins-*&&./configure --with-nagios-user=nagios --with-nagios-group=nagios --with-openssl --build=aarch64-unknown-linux-gnu
 RUN cd /tmp/nagios-plugins-*&& make
 RUN cd /tmp/nagios-plugins-*&&make install
 
@@ -89,7 +96,7 @@ RUN chown -R www-data:www-data /var/www/html/nconf
 RUN apt install -y rrdtool php7.4-gd php7.4-xml ssh-client
 copy sources/pnp4nagios-master.zip /tmp/pnp4nagios.zip
 RUN unzip /tmp/pnp4nagios.zip -d /tmp/
-RUN cd /tmp/pnp4nagios-master/&&./configure --with-nagios-user=nagios --with-nagios-group=nagios --with-httpd-conf=/etc/apache2/sites-available/
+RUN cd /tmp/pnp4nagios-master/&&./configure --with-nagios-user=nagios --with-nagios-group=nagios --with-httpd-conf=/etc/apache2/sites-available/ --build=aarch64-unknown-linux-gnu
 RUN cd /tmp/pnp4nagios-master/&&make all
 RUN cd /tmp/pnp4nagios-master/&&make fullinstall
 RUN mv /usr/local/pnp4nagios/share/install.php /usr/local/pnp4nagios/share/install.php_
