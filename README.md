@@ -18,3 +18,4 @@ Missing things:
 * Import the nconf db and create the user
 * Add nagios base config so it can start
 * build of plugins failed
+* .ssh of /home/nagios/ to be mounted externaly
