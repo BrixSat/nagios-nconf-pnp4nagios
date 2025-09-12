@@ -12,4 +12,8 @@ nagios-nconf-docker
    
    
 # nagios-nconf-pnp4nagios
-# nagios-nconf-pnp4nagios
+
+Missing things:
+* Create the database folder (if --volume is used folder is empty and db wont start)
+* Import the nconf db and create the user
+* Add nagios base config so it can start
