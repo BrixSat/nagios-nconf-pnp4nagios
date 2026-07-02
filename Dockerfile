@@ -3,8 +3,8 @@ FROM debian:bullseye
 ENV env prod
 ENV  DEBIAN_FRONTEND noninteractive
 MAINTAINER <Cesar Araujo>
-ARG NAGIOS_VERSION="4.5.9"
-ARG NAGIOS_PLUGIN_VERSION="2.4.11"
+ARG NAGIOS_VERSION="4.5.13"
+ARG NAGIOS_PLUGIN_VERSION="2.4.12"
 
 ##
 ## Create users
@@ -18,7 +18,7 @@ RUN usermod -a -G nagcmd nagios
 ## Apt update
 ##
 RUN apt-get update
-RUN apt-get update && apt-get install -y --no-install-recommends apt-utils debconf-utils sudo
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils debconf-utils sudo nut-client bc
 
 
 ##
@@ -33,9 +33,9 @@ RUN apt-get update
 ##
 ## Apt install packages
 ##
-RUN apt-get install  -y php7.4-mysql bsd-mailx libmailtools-perl lockfile-progs mime-support bind9-host postfix procmail
-#RUN apt-get install -y php7.4-mysql bsd-mailx libmailtools-perl lockfile-progs mime-support bind9-host
-RUN apt-get install -y libdbd-mysql-perl nano python3-pip unzip libzip-dev libssl-dev wget vim curl build-essential s3cmd  php7.4 libapache2-mod-php7.4 php7.4-mcrypt supervisor apache2 iputils-ping locate telnetd 
+RUN apt-get install  -y php8.5-mysql bsd-mailx libmailtools-perl lockfile-progs mime-support bind9-host postfix procmail
+#RUN apt-get install -y php8.5-mysql bsd-mailx libmailtools-perl lockfile-progs mime-support bind9-host
+RUN apt-get install -y libdbd-mysql-perl nano python3-pip unzip libzip-dev libssl-dev wget vim curl build-essential s3cmd jq php8.5 libapache2-mod-php8.5 php8.5-mcrypt php8.5-curl supervisor apache2 iputils-ping locate telnetd  dnsutils
 
 
 ##
@@ -88,12 +88,16 @@ COPY sources/new-nconf-master.zip /tmp/nconf.zip
 RUN unzip /tmp/nconf.zip -d /var/www/html/
 RUN mv /var/www/html/new-nconf-master/ /var/www/html/nconf/
 RUN chown -R www-data:www-data /var/www/html/nconf
-
+COPY config/inlcludeAllClasses.php /var/www/html/nconf/include/includeAllClasses.php
+COPY config/nconf_patches/include/functions.php /var/www/html/nconf/include/functions.php
+COPY config/nconf_patches/include/items_write2db.php /var/www/html/nconf/include/items_write2db.php
+COPY config/nconf_patches/include/add_item_write2db.php /var/www/html/nconf/include/add_item_write2db.php
+COPY config/nconf_patches/multimodify_attr_write2db.php /var/www/html/nconf/multimodify_attr_write2db.php
 
 ##
 ## Install pnp4nagios
 ##
-RUN apt install -y rrdtool php7.4-gd php7.4-xml ssh-client
+RUN apt install -y rrdtool php8.5-gd php8.5-xml ssh-client
 copy sources/pnp4nagios-master.zip /tmp/pnp4nagios.zip
 RUN unzip /tmp/pnp4nagios.zip -d /tmp/
 RUN cd /tmp/pnp4nagios-master/&&./configure --with-nagios-user=nagios --with-nagios-group=nagios --with-httpd-conf=/etc/apache2/sites-available/ --build=aarch64-unknown-linux-gnu
@@ -133,6 +137,26 @@ RUN mkdir /usr/local/nagios/share/images/logos/base
 RUN cp -r /usr/local/nagios/share/images/logos/*.gif  /usr/local/nagios/share/images/logos/base/
 RUN cp -r /usr/local/nagios/share/images/logos/*.png  /usr/local/nagios/share/images/logos/base/
 RUN cp -r /usr/local/nagios/share/images/logos/*.jpg  /usr/local/nagios/share/images/logos/base/
+COPY scripts/telegram-bot.php /usr/local/bin/
+COPY scripts/check_ups_baterry_charge.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_baterry_voltage_nominal.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_baterry_voltage.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_input_bypass_frequency.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_input_bypass_voltage.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_input_frequency.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_input_voltage.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_outlet_1_status.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_output_frequency_nominal.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_output_frequency.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_output_power_percent.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_output_voltage_nominal.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_output_voltage.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_load.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_power_nominal.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_realpower_nominal.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_status.sh  /usr/local/nagios/libexec/
+COPY scripts/check_ups_temperature.sh  /usr/local/nagios/libexec/
 
 
 ##
